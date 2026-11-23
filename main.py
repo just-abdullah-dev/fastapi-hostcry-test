@@ -17,6 +17,8 @@ def root():
     return {
         "server": "running",
         "message": "Server is running",
+        "after_update": True,
+        "after_update_at": "2026-11-23 3:34 PM",
         "env_configured": db["env_configured"],
         "database_connected": db["connected"],
         "database": db,
@@ -30,6 +32,8 @@ def health():
     return {
         "status": "ok",
         "server": "running",
+        "after_update": True,
+        "after_update_at": "2026-11-23 3:34 PM",
         "env_configured": db["env_configured"],
         "database_connected": db["connected"],
         "database": db,
