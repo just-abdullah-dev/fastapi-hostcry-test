@@ -17,6 +17,8 @@ def root():
     return {
         "server": "running",
         "message": "Server is running",
+        "env_configured": db["env_configured"],
+        "database_connected": db["connected"],
         "database": db,
     }
 
@@ -28,6 +30,7 @@ def health():
     return {
         "status": "ok",
         "server": "running",
+        "env_configured": db["env_configured"],
         "database_connected": db["connected"],
         "database": db,
     }

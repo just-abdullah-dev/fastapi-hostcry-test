@@ -11,6 +11,30 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _env_status() -> dict[str, Any]:
+    """Report which DB env vars are present (never expose secret values)."""
+    has_url = bool(os.getenv("DATABASE_URL", "").strip())
+    host = bool(os.getenv("POSTGRES_HOST", "").strip())
+    user = bool(os.getenv("POSTGRES_USER", "").strip())
+    password = bool(os.getenv("POSTGRES_PASSWORD", "").strip())
+    db = bool(os.getenv("POSTGRES_DB", "").strip())
+    port = bool(os.getenv("POSTGRES_PORT", "").strip())
+
+    configured = has_url or (host and user and db)
+
+    return {
+        "configured": configured,
+        "vars": {
+            "DATABASE_URL": has_url,
+            "POSTGRES_HOST": host,
+            "POSTGRES_PORT": port,
+            "POSTGRES_USER": user,
+            "POSTGRES_PASSWORD": password,
+            "POSTGRES_DB": db,
+        },
+    }
+
+
 def _build_dsn() -> str | None:
     """Build a DSN from env. Returns None if nothing usable is configured."""
     url = os.getenv("DATABASE_URL", "").strip()
@@ -39,15 +63,19 @@ def check_database() -> dict[str, Any]:
     The API stays up whether this succeeds or fails — useful for
     serverless deploys where the DB may not be wired yet.
     """
+    env = _env_status()
     dsn = _build_dsn()
+
     if not dsn:
         return {
             "connected": False,
-            "status": "not_configured",
+            "env_configured": False,
+            "status": "env_missing",
             "message": (
-                "Database env not set. Add DATABASE_URL or "
+                "Env vars missing. Add DATABASE_URL or "
                 "POSTGRES_HOST / POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB."
             ),
+            "env": env,
         }
 
     try:
@@ -59,12 +87,16 @@ def check_database() -> dict[str, Any]:
                 cur.fetchone()
         return {
             "connected": True,
-            "status": "ok",
-            "message": "Database connected successfully.",
+            "env_configured": True,
+            "status": "connected",
+            "message": "Env vars present and database connected successfully.",
+            "env": env,
         }
     except Exception as exc:  # noqa: BLE001 — report any connect/query failure
         return {
             "connected": False,
-            "status": "error",
-            "message": f"Database connection failed: {exc}",
+            "env_configured": True,
+            "status": "env_ok_db_failed",
+            "message": f"Env vars present but database not connected: {exc}",
+            "env": env,
         }
